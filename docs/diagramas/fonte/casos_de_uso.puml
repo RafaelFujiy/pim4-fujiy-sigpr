@@ -1,0 +1,35 @@
+@startuml
+!include estilo.iuml
+left to right direction
+skinparam packageStyle rectangle
+actor "Operador de\nprodução" as OPE
+actor "Inspetor da\nqualidade" as INS
+actor "Analista\nde PCP" as PCP
+actor "Expedição" as EXP
+actor "Gestor" as GES
+rectangle "SIGPR" {
+  usecase "Registrar recebimento\nde matéria-prima" as UC01
+  usecase "Abrir ordem\nde produção" as UC02
+  usecase "Vincular lote de\nmatéria-prima" as UC03
+  usecase "Apontar etapa" as UC04
+  usecase "Inspecionar lote\n(NBR 5426)" as UC05
+  usecase "Registrar não\nconformidade" as UC06
+  usecase "Expedir lote" as UC07
+  usecase "Rastrear lote" as UC08
+  usecase "Sequenciar OPs\npor prazo" as UC09
+  usecase "Consultar\nindicadores" as UC10
+  usecase "Exportar dados\npara os bancos" as UC11
+}
+PCP --> UC01
+PCP --> UC02
+UC02 ..> UC03 : <<include>>
+PCP --> UC09
+PCP --> UC11
+OPE --> UC04
+INS --> UC05
+UC06 ..> UC05 : <<extend>>
+INS --> UC08
+EXP --> UC07
+GES --> UC10
+GES --> UC08
+@enduml

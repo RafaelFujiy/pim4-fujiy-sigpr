@@ -1,0 +1,78 @@
+@startchen
+!include estilo.iuml
+skinparam defaultFontSize 15
+skinparam ranksep 22
+skinparam nodesep 14
+entity PRODUTO {
+  codigo <<key>>
+}
+entity FAMILIA {
+  sigla <<key>>
+}
+entity ORDEM_PRODUCAO {
+  numero <<key>>
+}
+entity LOTE_MP {
+  codigo <<key>>
+}
+entity FORNECEDOR {
+  cnpj <<key>>
+}
+entity ETAPA {
+  id <<key>>
+}
+entity OPERADOR {
+  matricula <<key>>
+}
+entity INSPECAO {
+  id <<key>>
+}
+entity CLIENTE {
+  cnpj <<key>>
+}
+entity EXPEDICAO {
+  nota_fiscal <<key>>
+}
+relationship PERTENCE {
+}
+relationship FABRICA {
+}
+relationship CONSOME {
+  peso_kg
+}
+relationship FORNECE {
+}
+relationship APONTAMENTO {
+  minutos
+  qtd_boa
+  qtd_refugo
+}
+relationship HABILITADO {
+}
+relationship INSPECIONA {
+}
+relationship RECEBE {
+}
+relationship CONTEM {
+  quantidade
+}
+PRODUTO -(1,N)- PERTENCE
+PERTENCE -(1,1)- FAMILIA
+ORDEM_PRODUCAO -(0,N)- FABRICA
+FABRICA -(1,1)- PRODUTO
+ORDEM_PRODUCAO -(0,N)- CONSOME
+CONSOME -(1,N)- LOTE_MP
+LOTE_MP -(0,N)- FORNECE
+FORNECE -(1,1)- FORNECEDOR
+ORDEM_PRODUCAO -(0,N)- APONTAMENTO
+APONTAMENTO -(0,N)- ETAPA
+APONTAMENTO -(0,N)- OPERADOR
+OPERADOR -(1,N)- HABILITADO
+HABILITADO -(1,N)- ETAPA
+ORDEM_PRODUCAO -(1,1)- INSPECIONA
+INSPECIONA -(0,1)- INSPECAO
+CLIENTE -(1,1)- RECEBE
+RECEBE -(0,N)- EXPEDICAO
+EXPEDICAO -(0,N)- CONTEM
+CONTEM -(1,N)- ORDEM_PRODUCAO
+@endchen

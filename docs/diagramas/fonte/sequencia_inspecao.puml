@@ -1,0 +1,30 @@
+@startuml
+!include estilo.iuml
+skinparam sequenceMessageAlign left
+actor Inspetor
+participant "Terminal\n(main.c)" as T
+participant "qualidade.c" as Q
+participant "producao.c" as P
+participant "arquivos.c" as A
+database "dados/*.csv" as CSV
+Inspetor -> T : número da OP
+T -> P : buscar_op(numero)
+P --> T : OP em EM_INSPECAO
+T -> Q : plano_amostragem(tamanho_lote)
+Q --> T : letra, amostra, Ac, Re
+T --> Inspetor : plano de amostragem
+Inspetor -> T : medições e defeitos da amostra
+T -> Q : registrar_inspecao(&insp, minutos)
+alt defeitos <= Ac
+  Q -> P : aplicar_apontamento(etapa 8)
+  P --> Q : OP APROVADA
+else defeitos >= Re
+  Q -> Q : OP REPROVADA (lote segregado)
+end
+Q --> T : resultado
+T -> A : salvar_inspecoes / salvar_ops
+A -> CSV : grava .tmp e substitui
+T -> A : registrar_auditoria("INSPECAO")
+A -> CSV : acrescenta em auditoria.log
+T --> Inspetor : APROVADO ou REPROVADO
+@enduml

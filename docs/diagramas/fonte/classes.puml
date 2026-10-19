@@ -1,0 +1,106 @@
+@startuml
+!include estilo.iuml
+hide methods
+hide circle
+skinparam classAttributeIconSize 0
+class Linha {
+  nome
+}
+class Familia {
+  sigla
+  nome
+}
+class Produto {
+  codigo
+  descricao
+  aco
+  classe_risco
+}
+class Cliente {
+  cnpj
+  razao_social
+  tipo
+}
+class Pedido {
+  data_pedido
+}
+class ItemPedido {
+  quantidade
+  preco_unitario
+  data_entrega
+}
+class OrdemProducao {
+  numero
+  quantidade
+  data_entrega
+  situacao
+  lote
+}
+class Fornecedor {
+  cnpj
+  razao_social
+}
+class LoteMateriaPrima {
+  codigo
+  aco
+  corrida
+  saldo_kg
+}
+class Consumo {
+  peso_kg
+}
+class Etapa {
+  numero
+  nome
+  tempo_padrao
+}
+class Operador {
+  matricula
+  nome
+}
+class Apontamento {
+  inicio
+  fim
+  qtd_boa
+  qtd_refugo
+  motivo
+}
+class Inspecao {
+  letra_codigo
+  amostra
+  Ac / Re
+  defeitos
+  resultado
+}
+class NaoConformidade {
+  descricao
+  causa
+  acao
+}
+class Expedicao {
+  nota_fiscal
+  data
+}
+class ItemExpedicao {
+  quantidade
+}
+Linha "1" -- "1..*" Familia
+Familia "1" -- "1..*" Produto
+Cliente "1" -- "0..*" Pedido
+Pedido "1" *-- "1..*" ItemPedido
+ItemPedido "0..*" -- "1" Produto
+ItemPedido "1" -- "0..1" OrdemProducao : atende >
+OrdemProducao "0..*" -- "1" Produto
+OrdemProducao "1..*" -- "1..*" LoteMateriaPrima
+(OrdemProducao, LoteMateriaPrima) .. Consumo
+Fornecedor "1" -- "0..*" LoteMateriaPrima
+OrdemProducao "1" *-- "0..8" Apontamento
+Apontamento "0..*" -- "1" Etapa
+Apontamento "0..*" -- "1" Operador
+Operador "0..*" -- "1..*" Etapa : habilitado >
+OrdemProducao "1" -- "0..1" Inspecao
+Inspecao "1" -- "0..*" NaoConformidade
+Expedicao "0..*" -- "1" Cliente
+Expedicao "1" *-- "1..*" ItemExpedicao
+ItemExpedicao "0..*" -- "1" OrdemProducao
+@enduml

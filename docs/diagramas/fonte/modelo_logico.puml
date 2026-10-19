@@ -1,0 +1,105 @@
+@startuml
+!include estilo.iuml
+hide circle
+skinparam linetype ortho
+left to right direction
+entity "cad.Familia" as FAM {
+  * sigla : CHAR(3) <<PK>>
+  --
+  nome : VARCHAR(40)
+  id_linha : TINYINT <<FK>>
+}
+entity "cad.Produto" as PRO {
+  * id_produto : INT <<PK>>
+  --
+  codigo : VARCHAR(12) <<UQ>>
+  sigla_familia : CHAR(3) <<FK>>
+  aco : VARCHAR(10)
+  classe_risco : TINYINT
+}
+entity "prod.OrdemProducao" as OP {
+  * numero : INT <<PK>>
+  --
+  id_produto : INT <<FK>>
+  id_item_pedido : INT <<FK>>
+  quantidade, data_entrega
+  situacao, etapa_atual
+  qtd_boa, qtd_refugo
+  lote : VARCHAR(12) <<UQ>>
+}
+entity "prod.LoteMateriaPrima" as LMP {
+  * codigo : VARCHAR(16) <<PK>>
+  --
+  id_fornecedor : INT <<FK>>
+  aco, corrida, saldo_kg
+}
+entity "prod.ConsumoMateriaPrima" as CON {
+  * numero_op : INT <<PK, FK>>
+  * codigo_lote_mp : VARCHAR(16) <<PK, FK>>
+  --
+  peso_kg : DECIMAL(9,2)
+}
+entity "prod.Apontamento" as APO {
+  * id_apontamento : BIGINT <<PK>>
+  --
+  numero_op : INT <<FK>>
+  id_etapa : TINYINT <<FK>>
+  matricula : VARCHAR(8) <<FK>>
+  inicio, fim, minutos
+  qtd_boa, qtd_refugo, motivo_refugo
+}
+entity "cad.Etapa" as ETA {
+  * id_etapa : TINYINT <<PK>>
+  --
+  nome, tempo_padrao_min_peca
+}
+entity "cad.Operador" as OPE {
+  * matricula : VARCHAR(8) <<PK>>
+  --
+  nome, data_admissao
+}
+entity "cad.OperadorEtapa" as OPT {
+  * matricula <<PK, FK>>
+  * id_etapa <<PK, FK>>
+  --
+  data_habilitacao
+}
+entity "qual.Inspecao" as INS {
+  * id_inspecao : INT <<PK>>
+  --
+  numero_op : INT <<FK>>
+  letra_codigo, amostra
+  aceitacao, rejeicao
+  defeitos, resultado
+}
+entity "com.ItemExpedicao" as IEX {
+  * nota_fiscal <<PK, FK>>
+  * numero_op <<PK, FK>>
+  --
+  quantidade
+}
+entity "com.Expedicao" as EXP {
+  * nota_fiscal : INT <<PK>>
+  --
+  id_cliente : INT <<FK>>
+  data_emissao
+}
+entity "cad.Cliente" as CLI {
+  * id_cliente : INT <<PK>>
+  --
+  cnpj <<UQ>>, razao_social
+}
+FAM ||--o{ PRO
+PRO ||--o{ OP
+OP ||--|{ CON
+LMP ||--o{ CON
+OP ||--o{ APO
+ETA ||--o{ APO
+OPE ||--o{ APO
+OPE ||--|{ OPT
+ETA ||--|{ OPT
+OP ||--o| INS
+OP ||--o{ IEX
+EXP ||--|{ IEX
+CLI ||--o{ EXP
+@enduml

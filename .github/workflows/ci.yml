@@ -1,0 +1,95 @@
+name: Integracao continua
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  terminal-c:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: c
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compilar sem nenhum aviso (-Werror)
+        run: make sigpr CFLAGS="-std=c99 -Wall -Wextra -pedantic -Werror -Iinclude"
+
+      - name: Testes automatizados
+        run: make teste
+
+      - name: Testes com verificacao de memoria (AddressSanitizer)
+        run: make memoria
+
+      - name: Exportacao para SQL Server e MongoDB
+        env:
+          SIGPR_HOJE: "2026-10-19"
+        run: |
+          printf '8\n0\n' | ./sigpr
+          test -s exportar/carga_ops.csv
+          test -s exportar/laudos.jsonl
+
+      - name: Guardar os arquivos de carga
+        uses: actions/upload-artifact@v4
+        with:
+          name: carga
+          path: c/exportar/
+
+  bancos-de-dados:
+    runs-on: ubuntu-latest
+    needs: terminal-c
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Receber os arquivos de carga do terminal
+        uses: actions/download-artifact@v4
+        with:
+          name: carga
+          path: c/exportar/
+
+      # Mesmos passos do README. A senha do sa e gerada a cada execucao e
+      # mascarada no log; o container so existe durante o job.
+      - name: Subir SQL Server e MongoDB (docker compose)
+        run: |
+          SENHA="Ci#$(openssl rand -hex 12)"
+          echo "::add-mask::$SENHA"
+          echo "MSSQL_SA_PASSWORD=$SENHA" > .env
+          docker compose up -d
+          for i in $(seq 1 60); do
+            if docker exec sigpr-sqlserver /opt/mssql-tools18/bin/sqlcmd \
+                 -S localhost -U sa -P "$SENHA" -C -Q "SELECT 1" > /dev/null 2>&1; then
+              echo "SQL Server pronto"; exit 0
+            fi
+            sleep 2
+          done
+          docker logs sigpr-sqlserver | tail -30
+          exit 1
+
+      - name: SQL Server - scripts 01 a 08 e carga do terminal
+        run: docker exec sigpr-sqlserver bash /scripts/instalar.sh
+
+      - name: SQL Server - conferir a carga
+        run: |
+          docker exec sigpr-sqlserver bash -c '/opt/mssql-tools18/bin/sqlcmd \
+            -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -C -b -d SIGPR -Q "
+            IF (SELECT COUNT(*) FROM prod.OrdemProducao) <> 51
+               OR (SELECT COUNT(*) FROM prod.Apontamento) <> 344
+               OR (SELECT COUNT(*) FROM qual.Inspecao) <> 41
+               OR (SELECT COUNT(*) FROM com.Expedicao) <> 40
+              THROW 50000, N'"'"'Carga incompleta'"'"', 1;
+            PRINT N'"'"'Carga conferida: 51 OPs, 344 apontamentos, 41 inspecoes, 40 expedicoes'"'"';"'
+
+      - name: MongoDB - replica set, colecoes, laudos, telemetria e replicacao
+        run: |
+          docker exec sigpr-mongo1 mongosh --quiet /scripts/01_replica_set.js
+          docker exec sigpr-mongo1 mongosh --quiet /scripts/02_colecoes.js
+          docker exec sigpr-mongo1 mongoimport --uri "mongodb://localhost/sigpr?replicaSet=rs0" \
+            --collection laudos_inspecao --file /carga/laudos.jsonl
+          docker exec sigpr-mongo1 mongosh --quiet "mongodb://localhost/sigpr?replicaSet=rs0" /scripts/03_consultas_laudos.js
+          docker exec sigpr-mongo1 mongosh --quiet "mongodb://localhost/sigpr?replicaSet=rs0" /scripts/04_telemetria.js
+          docker exec sigpr-mongo1 mongosh --quiet "mongodb://mongo1,mongo2,mongo3/sigpr?replicaSet=rs0" /scripts/05_replicacao.js
+
+      - name: Encerrar os containers
+        if: always()
+        run: docker compose down -v

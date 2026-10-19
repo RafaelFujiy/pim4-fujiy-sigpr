@@ -1,0 +1,11 @@
+codigo;descricao;linha;aco;classe_risco
+OD-CUR-001;Cureta periodontal Gracey 5/6;ODONTO;AISI420;1
+OD-CUR-002;Cureta periodontal McCall 13/14;ODONTO;AISI420;1
+OD-SON-003;Sonda exploradora nº 5;ODONTO;AISI420;1
+OD-ESP-004;Espátula para resina nº 1;ODONTO;AISI420;1
+OD-ESC-005;Escavador de dentina nº 17;ODONTO;AISI420;1
+CI-PIN-006;Pinça anatômica dente de rato 14 cm;CIRURGICO;AISI420;1
+CI-PIN-007;Pinça hemostática Kelly reta 14 cm;CIRURGICO;AISI420;1
+CI-TES-008;Tesoura Metzenbaum curva 15 cm;CIRURGICO;AISI440;1
+CI-TES-009;Tesoura íris reta 11,5 cm;CIRURGICO;AISI440;1
+CI-PAG-010;Porta-agulhas Mayo-Hegar 14 cm;CIRURGICO;AISI420;1

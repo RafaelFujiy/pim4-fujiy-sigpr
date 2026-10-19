@@ -1,0 +1,25 @@
+@startuml
+!include estilo.iuml
+node "Estação do chão de fábrica\n(Windows, VLAN 20)" as EST {
+  artifact "sigpr.exe" as EXE
+  folder "dados/  exportar/" as PASTA
+}
+node "Servidor de banco de dados\n(Docker, VLAN 10, firewall)" as SRV {
+  database "SQL Server 2022\nbanco SIGPR\n(cad, prod, qual, com, seg)" as SQL
+  node "MongoDB 7 - replica set rs0" as RS {
+    database "mongo1\n(primário)" as M1
+    database "mongo2\n(secundário)" as M2
+    database "mongo3\n(secundário)" as M3
+  }
+}
+node "Estações de PCP, qualidade\ne gestão (VLAN 30)" as ADM {
+  component "SSMS / relatórios" as REL
+}
+EXE --> PASTA : lê e grava CSV
+PASTA --> SQL : carga_*.csv\n(bcp, TCP 1433)
+PASTA --> M1 : laudos.jsonl\n(mongoimport, TCP 27017)
+M1 --> M2 : replicação
+M1 --> M3 : replicação
+REL --> SQL : consultas e views\n(TCP 1433)
+REL --> M1 : laudos e telemetria\n(TCP 27017)
+@enduml

@@ -1,0 +1,52 @@
+# Ambiente do SIGPR: SQL Server 2022 (registro oficial da producao) e
+# MongoDB 7 em replica set de tres nos (laudos e telemetria dos fornos).
+# Uso: copie .env.example para .env, defina a senha e rode
+#   docker compose up -d
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sigpr-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      MSSQL_AGENT_ENABLED: "true"
+      TZ: "America/Sao_Paulo"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-dados:/var/opt/mssql
+      - ./database/sqlserver:/scripts:ro
+      - ./c/exportar:/carga:ro
+
+  mongo1:
+    image: mongo:7
+    container_name: sigpr-mongo1
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo1-dados:/data/db
+      - ./database/mongodb:/scripts:ro
+      - ./c/exportar:/carga:ro
+
+  mongo2:
+    image: mongo:7
+    container_name: sigpr-mongo2
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    volumes:
+      - mongo2-dados:/data/db
+
+  mongo3:
+    image: mongo:7
+    container_name: sigpr-mongo3
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    volumes:
+      - mongo3-dados:/data/db
+
+volumes:
+  sqlserver-dados:
+  mongo1-dados:
+  mongo2-dados:
+  mongo3-dados:

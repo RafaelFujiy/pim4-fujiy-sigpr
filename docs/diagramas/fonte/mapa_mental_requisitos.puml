@@ -1,0 +1,22 @@
+@startmindmap
+!include estilo.iuml
+* Requisitos do SIGPR
+** RU - usuário
+*** saber onde está cada lote
+*** decidir aceite do lote por critério
+*** achar clientes de um lote suspeito
+** RF - funcionais
+*** OP com lote de aço vinculado
+*** apontamento por etapa
+*** inspeção NBR 5426
+*** rastreio e indicadores
+left side
+** RNF - não funcionais
+*** produto: usabilidade, eficiência,\nconfiabilidade, portabilidade
+*** organizacionais: padrão C99, Git
+*** externos: RDC 665/2022, LGPD
+** RS - sistema
+*** estações Windows no chão de fábrica
+*** servidor SQL Server e MongoDB
+*** rede local e backup
+@endmindmap

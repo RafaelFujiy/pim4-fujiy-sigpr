@@ -1,0 +1,16 @@
+# credenciais locais
+.env
+
+# binarios gerados
+c/sigpr
+c/sigpr.exe
+c/teste_sigpr
+c/teste_sigpr.exe
+c/teste_memoria
+*.o
+
+# arquivos gerados pelo terminal em execucao
+c/exportar/*
+!c/exportar/.gitkeep
+c/dados/*.tmp
+c/dados/auditoria.log

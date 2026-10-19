@@ -1,0 +1,14 @@
+@startuml
+!include estilo.iuml
+hide empty description
+[*] --> ABERTA : abrir OP\n(com lote de aço vinculado)
+ABERTA --> EM_PRODUCAO : apontar etapa 1
+EM_PRODUCAO --> EM_PRODUCAO : apontar etapas 2 a 6
+EM_PRODUCAO --> EM_INSPECAO : apontar etapa 7\n(gravação do lote)
+EM_INSPECAO --> APROVADA : defeitos <= Ac\n(etapa 8 apontada)
+EM_INSPECAO --> REPROVADA : defeitos >= Re
+REPROVADA --> [*] : lote segregado,\nnão conformidade aberta
+APROVADA --> APROVADA : expedição parcial
+APROVADA --> EXPEDIDA : saldo expedido
+EXPEDIDA --> [*]
+@enduml
