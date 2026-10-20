@@ -25,6 +25,10 @@ void configurar_console(void)
     SetConsoleCP(65001);
 #endif
     setlocale(LC_ALL, "");
+    /* caracteres continuam em "C": com a localidade do Windows (pagina
+       1252) a biblioteca converteria de novo os bytes UTF-8 ao escrever
+       no console, e os acentos sairiam trocados */
+    setlocale(LC_CTYPE, "C");
     /* numeros continuam com ponto decimal: os arquivos CSV sao lidos
        pelo SQL Server e pelo MongoDB, que esperam ponto */
     setlocale(LC_NUMERIC, "C");
@@ -61,14 +65,69 @@ void imprimir_coluna(const char *texto, int largura)
     }
 }
 
+/* Copia no maximo tamanho - 1 bytes sem cortar um caractere UTF-8 ao
+   meio (letras acentuadas ocupam dois bytes). */
+static void copiar_utf8(char *destino, const char *origem, int tamanho)
+{
+    int n = (int) strlen(origem);
+
+    if (n > tamanho - 1) {
+        n = tamanho - 1;
+        while (n > 0 && ((unsigned char) origem[n] & 0xC0) == 0x80) {
+            n--;
+        }
+    }
+    memcpy(destino, origem, n);
+    destino[n] = '\0';
+}
+
+#ifdef _WIN32
+/* No console do Windows, a leitura em UTF-8 corta a linha no primeiro
+   caractere acentuado. Quando a entrada e o teclado, a linha e lida em
+   UTF-16 com ReadConsoleW e convertida para UTF-8. Retorna 0 no fim da
+   entrada (Ctrl+Z ou Ctrl+C). */
+static int ler_console(char *buffer, int tamanho)
+{
+    wchar_t largo[TAM_LINHA];
+    char convertido[TAM_LINHA * 3];
+    DWORD lidos;
+
+    if (!ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), largo, TAM_LINHA - 1, &lidos, NULL) ||
+        lidos == 0 || largo[0] == 0x1A) {
+        return 0;
+    }
+    largo[lidos] = L'\0';
+    if (WideCharToMultiByte(CP_UTF8, 0, largo, -1, convertido, (int) sizeof convertido,
+                            NULL, NULL) == 0) {
+        return 0;
+    }
+    copiar_utf8(buffer, convertido, tamanho);
+    return 1;
+}
+#endif
+
 /* Le uma linha; se a entrada terminar (fim de arquivo), encerra o
    programa. Todos os dados ja foram gravados a cada operacao. */
 static void ler_linha(char *buffer, int tamanho)
 {
+    int lido;
+#ifdef _WIN32
+    DWORD modo;
+#endif
+
     /* garante que a pergunta apareca antes da leitura mesmo quando a
        saida esta redirecionada (sem terminal o stdout usa buffer cheio) */
     fflush(stdout);
-    if (fgets(buffer, tamanho, stdin) == NULL) {
+#ifdef _WIN32
+    if (GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &modo)) {
+        lido = ler_console(buffer, tamanho);
+    } else {
+        lido = fgets(buffer, tamanho, stdin) != NULL;
+    }
+#else
+    lido = fgets(buffer, tamanho, stdin) != NULL;
+#endif
+    if (!lido) {
         printf("\nEntrada encerrada.\n");
         exit(EXIT_SUCCESS);
     }
@@ -100,8 +159,7 @@ void ler_texto(const char *pergunta, char *destino, int tamanho)
             buffer[i] = ',';
         }
     }
-    strncpy(destino, buffer, tamanho - 1);
-    destino[tamanho - 1] = '\0';
+    copiar_utf8(destino, buffer, tamanho);
 }
 
 int ler_inteiro(const char *pergunta, int minimo, int maximo)
